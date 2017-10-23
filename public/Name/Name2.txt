@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>我的名字</title>
+    </head>
+    <body>
+        <p>
+            <input type="file" id="file">
+        </p>
+       <p>
+           <input type="submit" id="button1" value="确定" onclick="readfile()">
+       </p>
+       <p>
+           <input type="submit" id="button2" value="我的名字" onclick="drawname()">
+       </p>
+       <table width="1000" height="1000" border="1">
+           <tr>
+               <th scope="col">
+                   <canvas name="canvas"></canvas>
+               </th>
+           </tr>
+           </table> 
+    </body>
+
+    <script="text/javascript">
+     
+
+       var x=new Array();
+       var y=new Array();
+       var canvas=document.getElementByName("canvas")[0];
+
+       function readfile()   //读入文件
+       {
+           var N=0;
+           var flag=0;
+           var Line=new Array();
+           var file=document.getElementById("file").file[0];
+           var reader=new FileReader();
+           reader.readAsText(file);
+           reader.onload=function(e)
+           {
+               var fileText=e.target.result.split("\n");//换行标志作为分隔
+               for(var i=0;i<fileText.length;i++)
+               {
+                   if(fileText[i]!="END"&&fileText[i].length!=1) //取出非END行和序号行
+                   {
+                    var arr=fileText[i].split(",");//将编号、x、y分隔开
+                     x[i]=arr[0];
+                     y[i]=arr[1];
+                   }
+                   else
+                   {
+                    x[i]=0;
+                    y[i]=0;
+                   }
+               }
+           }
+       }
+
+       function drawname(canvas)
+       {
+          var ctx = canvas.getContext("2d");  
+          ctx.lineWidth =5;
+          ctx.strokeStyle ='BLUE';   
+          cxt.lineWidth=5;
+          for(var i=0;i<200;i++)
+          {
+              
+              if((x[i]!=0)&&(x[i+1]!=0))
+              {
+                  ctx.beginPath();
+                  ctx.moveTo(x[i]*20,y[i]*20);
+                  ctx.lineTo(x[i+1]*20,y[i+1]*20);
+                  ctx.stroke();
+              }
+              
+          }
+
+       }
+    </script>
+</html>
