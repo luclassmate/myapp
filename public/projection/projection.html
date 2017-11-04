@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>
+            地图投影
+        </title>
+    </head>
+    <body>
+        <p>
+            <input type="file" id="file">
+            <input type="submit" id="button1"  value="确定" onclick="readfile()">
+        </p>
+        <p>
+            <th>
+                中国版图数据
+            </th>
+        </p>
+        <p>
+            <input type="button" id="button2" value="北京54" onclick="beijing(canvas)">
+            <input type="button" id="button3" value="兰伯特投影" onclick="lanbote(canvas)">
+            <input type="button" id="button4" value="墨卡托投影" onclick="mokatuo(canvas)">
+        </p>
+        <p>
+            <th>
+                世界版图数据
+            </th>
+        </p>
+        <p>
+            <input type="button" id="button5" value="WGS84" onclick="WGS(canvas)">
+            <input type="button" id="button6" value="墨卡托投影" onclick="mokatuo2(canvas)">
+            <input type="button" id="button7" value="大圆轨迹" onclick="dayuan(canvas)">
+        </p>
+        <div id="tt">
+            </div>
+               <table width="1600" height="600" border="1">
+               <tr>
+               <th scope="col"><canvas name=canvas  width="1600px" height="800px"></canvas></th>
+               </tr>
+               </table>
+
+    </body>
+
+    <script>
+         var MAXAMOUNT=500000;
+         var canvas=document.getElementsByName("canvas")[0];
+         var x=new Array();
+         var y=new Array();
+         for(var i=0;i<MAXAMOUNT;i++)
+          {
+              x[i]=0;
+              y[i]=0;
+          }
+
+         /*中国版图*/     
+
+          /*墨卡托投影*/
+          var B00=0;//原始纬线
+          var L00=0;//中央经线
+         function readfile()
+          {
+              var file=document.getElementById("file").files[0];
+              var reader=new FileReader();
+              reader.readAsText(file);
+              reader.onload = function (w) 
+               {
+                   var fileText = w.target.result.split("\n");
+                   for(var i=0;i<fileText.length;i++)
+                    {
+                        if(fileText[i].length!=1&&fileText[i]!="END") //排除END行和序号行
+                        {
+                            var arr=fileText[i].split(",");//以逗号分隔
+                            x[i]=arr[0];
+                            y[i]=arr[1];
+                         }
+                        else
+                        {
+                            x[i]=0;
+                            y[i]=0;     
+                        }
+                  }
+             }
+         }  
+         
+          /*北京54坐标系参数*/
+          var a=6378245;  //长半轴
+          var b=63756863.01877;//短半轴
+          var e=1/298.3;//扁率
+          var r1=6399698.90178;//极曲率半径
+          var e1=0.006693421622966;//第一偏心率平方
+          var e2=0.006738525414684;//第二偏心率平方
+
+         function jingwei_beijing(canvas)  //中国版图北京54经纬线
+         {
+            var ctx = canvas.getContext("2d");    
+            ctx.save();
+            ctx.lineWidth=1;
+            ctx.strokeStyle='black';
+            //ctx.fillStyle='black';
+            //画经线
+            for(var i=0;i<1600;i+=50)
+            {
+                ctx.beginPath();
+                ctx.moveTo(i, 0);
+                ctx.lineTo(i,800);
+                ctx.fillText(i/10,0,800-i)//纬线刻度
+                ctx.stroke();
+                ctx.closePath();              
+            }
+            //画纬线
+            for(var i=0;i<1600;i+=50)
+            {
+                ctx.beginPath();
+                ctx.moveTo(0, i);
+                ctx.lineTo(1600,i);
+                ctx.fillText(i/10,i,800);//经线刻度
+                ctx.stroke();
+                ctx.closePath();              
+            }
+         }
+
+        
+
+         function jingwei_lanbote(canvas)  //中国版图兰伯特投影经纬线
+         {
+            var ctx = canvas.getContext("2d");    
+            ctx.save();
+            ctx.lineWidth=1;
+            ctx.strokeStyle='black';
+           var Ox=800;
+           var Oy=-600;//兰伯特投影的圆心在屏幕上坐标是（500，-600）
+           var r=1600;//半径为1600
+           
+           //画经线，5度一条，画72条
+           for(var i=0;i<72;i++)
+            {
+                var x=r*Math.sin(Math.PI*5*i/180);
+                var y=r*Math.cos(Math.PI*5*i/180);
+                ctx.beginPath();
+                ctx.moveTo(Ox, Oy);
+                ctx.lineTo(Ox-x,Oy+y);             
+                ctx.stroke();
+                ctx.closePath();              
+            }
+            //画纬线,5度一条，画18条
+            for (var i=0;i<=18;i++)
+            {           
+                var x1=0*Math.PI;
+                var y1=Math.PI*2;
+                ctx.arc(Ox,Oy,r/18*i,x1,y1,true);
+                ctx.stroke();
+                ctx.closePath(); 
+            }
+         }
+               
+         /*北京54投影*/
+         function beijing(canvas)  
+         {           
+              var ctx = canvas.getContext("2d"); 
+              ctx.clearRect(0,0,1600,800); 
+              jingwei_beijing(canvas); 
+              ctx.lineWidth =1.5;
+              ctx.strokeStyle ='red';  
+
+              for(var i=0;i<MAXAMOUNT-1;i++)
+                 {
+                     if((x[i]!=0)&&(x[i+1]!=0))
+                      {
+                          ctx.beginPath();
+                          ctx.moveTo(x[i]*10,800-y[i]*10);
+                          ctx.lineTo(x[i+1]*10,800-y[i+1]*10); 
+                          ctx.stroke();
+                      }       
+                  }                    
+          }
+
+           /*兰伯特投影*/
+          var B0=0;//原始纬线
+          var L0=105*Math.PI/180;//中央经线
+          var B1=20*Math.PI/180;//第一标准纬线
+          var B2=40*Math.PI/180;//第二标准纬线
+        
+        /*兰伯特投影*/
+        function lanbote(canvas)
+        {
+              var ctx = canvas.getContext("2d"); 
+              ctx.clearRect(0,0,1600,800); 
+              jingwei_lanbote(canvas);
+              ctx.lineWidth =1.5;
+              ctx.strokeStyle ='red'; 
+              /*mB1和mB2为标准纬线B1和B2处的m值*/
+              var mB1=Math.cos(B1)/Math.sqrt(1-e1*Math.pow(Math.sin(B1),2));
+              var mB2=Math.cos(B2)/Math.sqrt(1-e1*Math.pow(Math.sin(B2),2));
+              /*tB1和tB2位标准纬线B1和B2处的t值*/
+              var tB1=Math.tan(Math.PI/4-B1/2)/((Math.pow((1-e1*Math.sin(B1)),e1/2))/Math.pow((1+e1*Math.sin(B1)),e1/2));
+              var tB2=Math.tan(Math.PI/4-B2/2)/((Math.pow((1-e1*Math.sin(B2)),e1/2))/Math.pow((1+e1*Math.sin(B2)),e1/2));
+              var n=Math.log(mB1/mB2,Math.E)/Math.log(tB1/tB2,Math.E);
+              var f=mB1/(n*Math.pow(tB1,n));
+              for(var i=0;i<MAXAMOUNT-1;i++)
+              {
+                if((x[i]!=0)&&(x[i+1]!=0))
+                      {
+                          var r1=a * f * Math.pow(Math.tan(Math.PI / 4 - (y[i] * Math.PI / 180) / 2) / Math.pow(((1 - Math.sqrt(e1) * Math.sin(y[i] * Math.PI / 180)) / (1 + Math.sqrt(e1) * Math.sin(y[i] * Math.PI / 180))), (Math.sqrt(e1) / 2)), n);
+                          var r2=a * f * Math.pow(Math.tan(Math.PI / 4 - (y[i+1] * Math.PI / 180) / 2) / Math.pow(((1 - Math.sqrt(e1) * Math.sin(y[i+1] * Math.PI / 180)) / (1 + Math.sqrt(e1) * Math.sin(y[i+1] * Math.PI / 180))), (Math.sqrt(e1) / 2)), n);
+                          var ct1=n * (x[i] * Math.PI / 180-L0);
+                          var ct2=n * (x[i+1] * Math.PI / 180-L0);
+                          var xx1=a * f - r1 * Math.cos(ct1);
+                          var yy1 = r1 * Math.sin(ct1);
+                          var xx2=a * f - r2 * Math.cos(ct2);
+                          var yy2 = r2 * Math.sin(ct2);
+                          ctx.beginPath();
+                          ctx.moveTo(yy1*0.0001+800,800-xx1*0.0001);
+                          ctx.lineTo(yy2*0.0001+800,800-xx2*0.0001);                          
+                          ctx.stroke();
+                      }       
+              }           
+        }
+
+        /*墨卡托投影*/
+        /*墨卡托投影经纬网*/
+         /*WGS84坐标系 基本参数*/
+         var a1 = 6378137;//长半轴
+         var b1 = 6356752.3142;//短半轴
+         var e01 = 0.00669437999013;//第一偏心率平方
+         var e11 = 0.006739496742227;//第二偏心率平方
+         function jingwei_mokatuo(canvas)
+         {
+            var ctx = canvas.getContext("2d");    
+            ctx.save();
+            ctx.lineWidth=1;
+            ctx.strokeStyle='black';
+             //画经线
+            for(var i=0;i<1600;i+=50)
+            {
+                ctx.beginPath();
+                ctx.moveTo(i, 0);
+                ctx.lineTo(i,800);
+                ctx.stroke();
+                ctx.closePath();              
+            }
+            //画纬线
+            for(var i=0;i<1600;i+=50)
+            {
+                var jjz = ((Math.pow(a1, 2) / b1) / Math.sqrt(1 + e11)) * ((i * Math.PI / 180) - 0);
+                ctx.beginPath();
+                ctx.moveTo(0, jjz*0.00001+50);
+                ctx.lineTo(1600,jjz*0.00001+50);
+                ctx.fillText(i/10,i,800);//经线刻度
+                ctx.stroke();
+                ctx.closePath();              
+            }
+
+         }
+
+         function mokatuo(canvas)
+         {
+              var ctx = canvas.getContext("2d"); 
+              ctx.clearRect(0,0,1600,800); 
+              jingwei_mokatuo(canvas);
+              ctx.lineWidth =1.5;
+              ctx.strokeStyle ='red'; 
+              for(var i=0;i<MAXAMOUNT-1;i++)
+              {
+                if((x[i]!=0)&&(x[i+1]!=0))
+                      {
+                        var xxx1 = ((Math.pow(a, 2) / b) / Math.sqrt(1 + e2)) * Math.log((Math.tan(Math.PI / 4 + (y[i] * Math.PI / 180) / 2)) * Math.pow(((1 - Math.sqrt(e1) * Math.sin(y[i] * Math.PI / 180)) / (1 + Math.sqrt(e1) * Math.sin(y[i] * Math.PI / 180))), (Math.sqrt(e1) / 2)), Math.E);
+                        var yyy1 = ((Math.pow(a, 2) / b) / Math.sqrt(1 + e2)) * ((x[i] * Math.PI / 180) - L0);
+                        var xxx2 = ((Math.pow(a, 2) / b) / Math.sqrt(1 + e2)) * Math.log((Math.tan(Math.PI / 4 + (y[i+1] * Math.PI / 180) / 2)) * Math.pow(((1 - Math.sqrt(e1) * Math.sin(y[i+1] * Math.PI / 180)) / (1 + Math.sqrt(e1) * Math.sin(y[i+1]* Math.PI / 180))), (Math.sqrt(e1) / 2)), Math.E);
+                        var yyy2 = ((Math.pow(a, 2) / b) / Math.sqrt(1 + e2)) * ((x[i+1] * Math.PI / 180) - L0);
+                        ctx.beginPath();
+                        ctx.moveTo(yyy1*0.001+800,800-xxx1*0.001);
+                        ctx.lineTo(yyy2*0.001+800,800-xxx2*0.001);                          
+                        ctx.stroke();
+                      }       
+              }           
+         }
+         /*世界版图*/
+         /*WGS84*/
+         /*WGS84经纬*/
+          /*WGS84坐标系 基本参数*/
+          var a1 = 6378137;//长半轴
+          var b1 = 6356752.3142;//短半轴
+          var e11 = 0.00669437999013;//第一偏心率平方
+          var e12 = 0.006739496742227;//第二偏心率平方
+         function jingwei_WGS(canvas)
+         {
+            var x11=0;
+            var y11=0;
+            var ctx = canvas.getContext("2d");    
+            ctx.save();
+            ctx.lineWidth=1;
+            ctx.strokeStyle='black';
+           /*经度360，每5度一根线，一共72根*/
+           for(var i=0;i<72;i++)
+           {
+                ctx.beginPath();
+                ctx.moveTo(x11, 0);
+                ctx.lineTo(x11,800); 
+                x11=x11+23;            
+                ctx.stroke();
+                ctx.closePath();        
+           }
+
+           /*纬度180度，每5度一根线，一共36根*/
+           for(var i=0;i<36;i++)
+           {
+                ctx.beginPath();
+                ctx.moveTo(0, y11);
+                ctx.lineTo(1600,y11); 
+                y11=y11+23;
+                ctx.stroke();
+                ctx.closePath();  
+           }
+
+         }
+
+         function WGS(canvas)
+         {
+              var ctx = canvas.getContext("2d"); 
+              ctx.clearRect(0,0,1600,800); 
+              jingwei_WGS(canvas);
+              ctx.lineWidth =1.5;
+              ctx.strokeStyle ='blue'; 
+              for(var i=0;i<MAXAMOUNT-1;i++)
+                 {
+                     if((x[i]!=0)&&(x[i+1]!=0))
+                      {
+                          ctx.beginPath();
+                          ctx.moveTo(x[i]*4+800,500-y[i]*4);
+                          ctx.lineTo(x[i+1]*4+800,500-y[i+1]*4); 
+                          ctx.stroke();
+                      }       
+                  }                  
+
+         }
+
+         /*墨卡托投影世界*/
+         function jingwei_mokatuo2(canvas)
+         {
+            var ctx = canvas.getContext("2d");    
+            ctx.save();
+            ctx.lineWidth=1;
+            ctx.strokeStyle='black';
+            var jx1=0;
+            var jy1=0;
+            var z=0;
+            var ctx = canvas.getContext("2d");    
+            ctx.save();
+            ctx.lineWidth=1;
+            ctx.strokeStyle='black';
+             //画经线
+            for(var i=0;i<1600;i+=23)
+            {
+                ctx.beginPath();
+                ctx.moveTo(i, 0);
+                ctx.lineTo(i,800);
+                ctx.stroke();
+                ctx.closePath();              
+            }
+            //画纬线
+            for(var i=0;i<1600;i+=23)
+            {
+                var jjz = ((Math.pow(a1, 2) / b1) / Math.sqrt(1 + e11)) * ((i * Math.PI / 180) - 0);
+                ctx.beginPath();
+                ctx.moveTo(0, jjz*0.00001+20);
+                ctx.lineTo(1600,jjz*0.00001+20);            
+                ctx.stroke();
+                ctx.closePath();              
+            }
+
+         }
+
+         function mokatuo2(canvas)
+         {
+              var ctx = canvas.getContext("2d"); 
+              ctx.clearRect(0,0,1600,800); 
+              jingwei_mokatuo2(canvas);
+              ctx.lineWidth =1.5;
+              ctx.strokeStyle ='blue'; 
+              for(var i=0;i<MAXAMOUNT-1;i++)
+              {
+                if((x[i]!=0)&&(x[i+1]!=0))
+                      {
+                        var xxx1 = ((Math.pow(a1, 2) / b1) / Math.sqrt(1 + e11)) * Math.log((Math.tan(Math.PI / 4 + (y[i] * Math.PI / 180) / 2)) * Math.pow(((1 - Math.sqrt(e01) * Math.sin(y[i] * Math.PI / 180)) / (1 + Math.sqrt(e01) * Math.sin(y[i] * Math.PI / 180))), (Math.sqrt(e01) / 2)), Math.E);
+                        var yyy1 = ((Math.pow(a1, 2) / b1) / Math.sqrt(1 + e11)) * ((x[i] * Math.PI / 180));
+                        var xxx2 = ((Math.pow(a1, 2) / b1) / Math.sqrt(1 + e11)) * Math.log((Math.tan(Math.PI / 4 + (y[i+1] * Math.PI / 180) / 2)) * Math.pow(((1 - Math.sqrt(e01) * Math.sin(y[i+1] * Math.PI / 180)) / (1 + Math.sqrt(e01) * Math.sin(y[i+1]* Math.PI / 180))), (Math.sqrt(e01) / 2)), Math.E);
+                        var yyy2 = ((Math.pow(a1, 2) / b1) / Math.sqrt(1 + e11)) * ((x[i+1] * Math.PI / 180));
+                        ctx.beginPath();
+                        ctx.moveTo(yyy1*0.00003+800,500-xxx1*0.00002);
+                        ctx.lineTo(yyy2*0.00003+800,500-xxx2*0.00002);                          
+                        ctx.stroke();
+                      }       
+              }           
+
+         }
+
+         /*大圆轨迹*/
+         /*大圆参数*/
+            var LO1 = 2.35222222;//巴黎经度
+            var LA1 = 48.85661389;//巴黎纬度
+            var LO2 = 116.40966670;//北京经度
+            var LA2 = 39.90690556;//北京纬度
+            var tanLA1 = Math.tan(LA1 / 180 * Math.PI);
+            var tanLA2 = Math.tan(LA2 / 180 * Math.PI);
+            var sinLO1 = Math.sin(LO1 / 180 * Math.PI);
+            var sinLO2 = Math.sin(LO2 / 180 * Math.PI);
+            var cosLO1 = Math.cos(LO1 / 180 * Math.PI);
+            var cosLO2 = Math.cos(LO2 / 180 * Math.PI);
+            var LOQ = Math.atan(-(tanLA2 * cosLO1 - tanLA1 * cosLO2) / (tanLA2 * sinLO1 - tanLA1 * sinLO2)) * 180 / Math.PI;;//新极点经度
+            var LAQ = -Math.atan(Math.cos((LO1 - LOQ) / 180 * Math.PI) / tanLA1) * 180 / Math.PI;//新极点纬度
+            var difference = LO2 - LO1;//两地经差
+            var dx = difference / number;//轨迹点经差
+            var routes = new Array();
+            var LOQ;//新极点经度
+            var LAQ;//新极点纬度
+            var number=1000;
+
+           
+
+            function guiji() 
+            {
+                LOQ = Math.atan(-(tanLA2 * cosLO1 - tanLA1 * cosLO2) / (tanLA2 * sinLO1 - tanLA1 * sinLO2)) * 180 / Math.PI;
+                LAQ = -Math.atan(Math.cos((LO1 - LOQ) / 180 * Math.PI) / tanLA1) * 180 / Math.PI;
+                var difference = LO2 - LO1;//北京与巴黎的经差
+                var dx = difference / number;//各小点间的经差
+                var ptx = new Array(); //存放点
+                var pty = new Array();
+               
+                var rr = Math.pow((LOQ - LO2), 2) + Math.pow((LAQ - LA2), 2);
+
+                for (var i = 0; i < number; i++) //将点存入数组
+                {
+                    ptx[i] = LO2 - i * dx;
+                    pty[i] = Math.sqrt(rr - Math.pow((LOQ - ptx[i]), 2)) + LAQ;
+                }
+            }
+
+
+            function dayuan(canvas) //绘制大圆轨迹
+            {
+                var ptxx=new Array();
+                var ptyy=new Array();
+                var canvas = document.getElementById("canvas");
+                var cxt = canvas.getContext("2d");
+                ctx.clearRect(0,0,1600,800); 
+                guiji();
+                mokatuo2(canvas);
+              
+                cxt.strokeStyle = "red";
+                cxt.lineWidth = 2;
+                if (ptx[i]!= null&& pty[i]!=null) 
+                {
+                    for (var j = 0; j <ptx.length; j++)
+                     { 
+                        ptxx[j] = ((Math.pow(a1, 2) / b1) / Math.sqrt(1 + e11)) * Math.log((Math.tan(Math.PI / 4 + (pty[j] * Math.PI / 180) / 2)) * Math.pow(((1 - Math.sqrt(e01) * Math.sin(pty[j] * Math.PI / 180)) / (1 + Math.sqrt(e01) * Math.sin(pty[j] * Math.PI / 180))), (Math.sqrt(e01) / 2)), Math.E);
+                        ptyy[j] = ((Math.pow(a1, 2) / b1) / Math.sqrt(1 + e11)) * ((ptx[j] * Math.PI / 180) - 0);                       
+                    }    
+                }
+
+                for (var i=0;i<ptx.length-1;i++)
+                {
+                    cxt.beginPath();
+                    cxt.moveTo(ptxx[i],ptyy[i]);
+                    cxt.lineTo(ptxx[i+1],ptyy[i+1]);
+                    cxt.stroke();
+                }
+            }
+
+
+ 
+        
+ 
+    </script>
+</html>
