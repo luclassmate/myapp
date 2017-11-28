@@ -1,0 +1,249 @@
+<!DOCTYPE HTML>
+<html>
+        <head>
+            <title>
+                道克拉斯-普克压缩
+            </title>
+        </head>
+        <body>
+            <p>
+                <input type="file" id="file">
+                <input type="submit" id="button1"  value="确定" onclick="readfile()">
+            </p>
+            <p>
+                <input type="button" id="button2" value="兰伯特投影" onclick="lanbote(canvas)">
+                <input type="button" id="button4" value="道格拉斯-普克压缩" onclick="douglas_peucker(canvas)">
+            </p>
+
+            <p id="demo"></p>
+            <p id="demo1"></p>
+
+
+            <div id="tt">
+                </div>
+                   <table width="1600" height="600" border="1">
+                   <tr>
+                   <th scope="col"><canvas name=canvas  width="1600px" height="800px"></canvas></th>
+                   </tr>
+                   </table>
+        </body>
+
+        <script>
+              var MAXAMOUNT=500000;
+              var canvas=document.getElementsByName("canvas")[0];
+              var x=new Array();
+              var y=new Array();
+              var count=0;//序号
+              for(var i=0;i<MAXAMOUNT;i++)
+              {
+                 x[i]=0;
+                 y[i]=0;
+              }
+
+              function readfile()
+              {
+                  var file=document.getElementById("file").files[0];
+                  var reader=new FileReader();
+                  reader.readAsText(file);
+                  reader.onload = function (w) 
+                   {
+                       var fileText = w.target.result.split("\n");
+                       for(var i=0;i<fileText.length;i++)
+                        {
+                            if(fileText[i].length!=1&&fileText[i]!="END") //排除END行和序号行
+                            {
+                                var arr=fileText[i].split(",");//以逗号分隔
+                                x[count]=arr[0];
+                                y[count]=arr[1];
+                                count++;
+                             }
+                            else
+                            {
+                                x[count]=0;
+                                y[count]=0;     
+                            }
+                            document.getElementById("demo").innerHTML="压缩前点数"+count;
+                      }
+                 }
+              }
+         function jingwei_lanbote(canvas)  //中国版图兰伯特投影经纬线
+         {
+            var ctx = canvas.getContext("2d");    
+            ctx.save();
+            ctx.lineWidth=1;
+            ctx.strokeStyle='black';
+            var Ox=800;
+            var Oy=-600;//兰伯特投影的圆心在屏幕上坐标是（500，-600）
+            var r=1600;//半径为1600
+           
+           //画经线，5度一条，画72条
+           for(var i=0;i<72;i++)
+            {
+                var x=r*Math.sin(Math.PI*5*i/180);
+                var y=r*Math.cos(Math.PI*5*i/180);
+                ctx.beginPath();
+                ctx.moveTo(Ox, Oy);
+                ctx.lineTo(Ox-x,Oy+y);             
+                ctx.stroke();
+                ctx.closePath();              
+            }
+            //画纬线,5度一条，画18条
+            for (var i=0;i<=18;i++)
+            {           
+                var x1=0*Math.PI;
+                var y1=Math.PI*2;
+                ctx.arc(Ox,Oy,r/18*i,x1,y1,true);
+                ctx.stroke();
+                ctx.closePath(); 
+            }
+         } 
+
+           /*兰伯特投影*/
+          var B0=0;//原始纬线
+          var L0=105*Math.PI/180;//中央经线
+          var B1=20*Math.PI/180;//第一标准纬线
+          var B2=40*Math.PI/180;//第二标准纬线
+          var e1=0.006693421622966;//第一偏心率平方
+          var a=6378245;  //长半轴
+          var b=63756863.01877;//短半轴
+          var e=1/298.3;//扁率
+          var r1=6399698.90178;//极曲率半径
+          var e2=0.006738525414684;//第二偏心率平方
+        /*兰伯特投影*/
+          function lanbote(canvas)
+         {
+              var ctx = canvas.getContext("2d"); 
+              ctx.clearRect(0,0,1600,800); 
+              jingwei_lanbote(canvas);
+              ctx.lineWidth =1.5;
+              ctx.strokeStyle ='red'; 
+              /*mB1和mB2为标准纬线B1和B2处的m值*/
+              var mB1=Math.cos(B1)/Math.sqrt(1-e1*Math.pow(Math.sin(B1),2));
+              var mB2=Math.cos(B2)/Math.sqrt(1-e1*Math.pow(Math.sin(B2),2));
+              /*tB1和tB2位标准纬线B1和B2处的t值*/
+              var tB1=Math.tan(Math.PI/4-B1/2)/((Math.pow((1-e1*Math.sin(B1)),e1/2))/Math.pow((1+e1*Math.sin(B1)),e1/2));
+              var tB2=Math.tan(Math.PI/4-B2/2)/((Math.pow((1-e1*Math.sin(B2)),e1/2))/Math.pow((1+e1*Math.sin(B2)),e1/2));
+              var n=Math.log(mB1/mB2,Math.E)/Math.log(tB1/tB2,Math.E);
+              var f=mB1/(n*Math.pow(tB1,n));
+              for(var i=0;i<MAXAMOUNT-1;i++)
+              {
+
+                 if((x[i]!=0)&&(x[i+1]!=0))
+                      {
+                          var r1=a * f * Math.pow(Math.tan(Math.PI / 4 - (y[i] * Math.PI / 180) / 2) / Math.pow(((1 - Math.sqrt(e1) * Math.sin(y[i] * Math.PI / 180)) / (1 + Math.sqrt(e1) * Math.sin(y[i] * Math.PI / 180))), (Math.sqrt(e1) / 2)), n);
+                          var r2=a * f * Math.pow(Math.tan(Math.PI / 4 - (y[i+1] * Math.PI / 180) / 2) / Math.pow(((1 - Math.sqrt(e1) * Math.sin(y[i+1] * Math.PI / 180)) / (1 + Math.sqrt(e1) * Math.sin(y[i+1] * Math.PI / 180))), (Math.sqrt(e1) / 2)), n);
+                          var ct1=n * (x[i] * Math.PI / 180-L0);
+                          var ct2=n * (x[i+1] * Math.PI / 180-L0);
+                          var xx1=a * f - r1 * Math.cos(ct1);
+                          var yy1 = r1 * Math.sin(ct1);
+                          var xx2=a * f - r2 * Math.cos(ct2);
+                          var yy2 = r2 * Math.sin(ct2);
+                          ctx.beginPath();
+                          ctx.moveTo(yy1*0.0001+800,800-xx1*0.0001);
+                          ctx.lineTo(yy2*0.0001+800,800-xx2*0.0001);                          
+                          ctx.stroke();
+                      }       
+                }           
+           } 
+
+           function distance(pa,pb)
+           {
+               var d;
+               d=Math.sqrt((x[pa]-x[pb])*(x[pa]-x[pb])+(b[pa]-b[pb])*(b[pa]*b[pb]));
+               return d;
+           }
+
+           function del(a,b)
+           {
+               var c=a+1;
+               while(c<b)
+               {
+                   x[c]=0;
+                   y[c]=0;
+                   c++;
+               }
+           }
+        
+           function douglas(p1,p2)  
+           {
+               var a,b,c,dmax,d;
+               var e=30;
+               var i=0;
+               var maxno=p1;
+               if(p2-p1>=2)
+               {
+                   dmax=0;
+                   a=distance(p1,p2);
+                   i=p1+1;
+                   while(i<p2)
+                   {
+                    b=distance(p1,i);
+                    c=distance(p2,i);
+                    var cosB=(a*a+c*c-b*b)/(2*a*c);
+                    var cosC=(a*a+b*b-c*c)/(2*a*b);
+                    var sinB=Math.sqrt(1-cosB*cosB);
+                    if(cosB==0||cosC==0)
+                    {
+                        if(cosB==0)d=c;
+                        else d=b;
+                    }
+                    else d=c*sinB;
+                    if(dmax<=d)
+                    {
+                        dmax=d;
+                        maxno=i;
+                    }
+                            i++;
+                    }
+
+                    if(dmax>e)
+                    {
+                        douglas(p1,maxno);
+			            douglas(maxno,p2);
+                    }
+                    else del(p1,p2);
+
+                   }
+               }
+                            
+               function douglas_peucker(canvas)
+               {
+                var n1=0;
+                var ctx = canvas.getContext("2d"); 
+                ctx.clearRect(0,0,1600,800); 
+                jingwei_lanbote(canvas);
+                ctx.lineWidth =1.5;
+                ctx.strokeStyle ='black'; 
+                /*mB1和mB2为标准纬线B1和B2处的m值*/
+                var mB1=Math.cos(B1)/Math.sqrt(1-e1*Math.pow(Math.sin(B1),2));
+                var mB2=Math.cos(B2)/Math.sqrt(1-e1*Math.pow(Math.sin(B2),2));
+                /*tB1和tB2位标准纬线B1和B2处的t值*/
+                var tB1=Math.tan(Math.PI/4-B1/2)/((Math.pow((1-e1*Math.sin(B1)),e1/2))/Math.pow((1+e1*Math.sin(B1)),e1/2));
+                var tB2=Math.tan(Math.PI/4-B2/2)/((Math.pow((1-e1*Math.sin(B2)),e1/2))/Math.pow((1+e1*Math.sin(B2)),e1/2));
+                var n=Math.log(mB1/mB2,Math.E)/Math.log(tB1/tB2,Math.E);
+                var f=mB1/(n*Math.pow(tB1,n));
+                for(var i=0;i<MAXAMOUNT-1;i++)
+                {
+                  if((x[i]!=0)&&(x[i+1]!=0))
+                        {
+                            var r1=a * f * Math.pow(Math.tan(Math.PI / 4 - (y[i] * Math.PI / 180) / 2) / Math.pow(((1 - Math.sqrt(e1) * Math.sin(y[i] * Math.PI / 180)) / (1 + Math.sqrt(e1) * Math.sin(y[i] * Math.PI / 180))), (Math.sqrt(e1) / 2)), n);
+                            var r2=a * f * Math.pow(Math.tan(Math.PI / 4 - (y[i+1] * Math.PI / 180) / 2) / Math.pow(((1 - Math.sqrt(e1) * Math.sin(y[i+1] * Math.PI / 180)) / (1 + Math.sqrt(e1) * Math.sin(y[i+1] * Math.PI / 180))), (Math.sqrt(e1) / 2)), n);
+                            var ct1=n * (x[i] * Math.PI / 180-L0);
+                            var ct2=n * (x[i+1] * Math.PI / 180-L0);
+                            var xx1=a * f - r1 * Math.cos(ct1);
+                            var yy1 = r1 * Math.sin(ct1);
+                            var xx2=a * f - r2 * Math.cos(ct2);
+                            var yy2 = r2 * Math.sin(ct2);
+                            ctx.beginPath();
+                            ctx.moveTo(yy1*0.0001+800,800-xx1*0.0001);
+                            ctx.lineTo(yy2*0.0001+800,800-xx2*0.0001);   
+                            n1++;                       
+                            ctx.stroke();
+                        }       
+                }           
+                    document.getElementById("demo1").innerHTML="压缩后点数"+n1;
+                    document.getElementById("demo1").innerHTML+="压缩率："+n1/count;
+               }
+             
+        </script>
+</html>
